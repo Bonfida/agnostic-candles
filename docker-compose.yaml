@@ -1,0 +1,50 @@
+services:
+  db:
+    env_file: .env
+    image: timescale/timescaledb:latest-pg14
+    ports:
+      - 127.0.0.1:${DB_PORT}:5432
+    volumes:
+      - data:/var/lib/postgresql/data
+
+  candles-server:
+    env_file: .env
+    build:
+      context: ./candles-server
+      dockerfile: Dockerfile
+    depends_on:
+      - "db"
+      - "candles-worker"
+    entrypoint:
+      - "/usr/local/bin/candles-server"
+      - "/etc/markets/markets.json"
+      - ${POSTGRES_USER}
+      - ${POSTGRES_PASSWORD}
+      - ${HOST}
+      - ${DB_PORT}
+      - ${DB_NAME}
+
+    ports:
+      - 127.0.0.1:8080:8080
+    restart: always
+    volumes:
+      - ./markets.json:/etc/markets/markets.json
+
+  candles-worker:
+    env_file: .env
+    build:
+      context: ./candles-worker
+      dockerfile: Dockerfile
+    depends_on:
+      - "db"
+    restart: always
+    entrypoint:
+      - "/usr/local/bin/candles-worker"
+      - "/etc/markets/markets.json"
+      - ${RPC_URL}
+      - ${REFRESH_PERIOD}
+    volumes:
+      - ./markets.json:/etc/markets/markets.json
+
+volumes:
+  data:

@@ -1,0 +1,11 @@
+[
+  {
+    "address": "ETp9eKXVv1dWwHSpsXRUuXHmw24PwRkttCGVgpZEY9zF",
+    "name": "FIDA-USDC-PYTH",
+    "isPyth": true,
+    "baseDecimals": 6,
+    "quoteDecimals": 6,
+    "min_mov": 1,
+    "price_scale": 100
+  }
+]

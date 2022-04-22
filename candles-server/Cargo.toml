@@ -1,0 +1,25 @@
+[package]
+name = "candles-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4.0.1"
+serde = {version = "1.0", features = ["derive"]}
+serde_json = "1.0"
+lazy_static = "1.4.0"
+tokio-postgres = {version = "0.7.5", features = ["with-chrono-0_4"]}
+tokio = "1.17"
+chrono = { version = "0.4.19", features = ["serde"] }
+sysinfo = "0.23.8"
+futures = "0.3.21"
+dotenv = "0.15"
+bb8 = "0.8.0"
+bb8-postgres = "0.8.0"
+regex = "1"
+clap = "3.1.8"
+tokio-pg-mapper = "0.2.0"
+tokio-pg-mapper-derive = "0.2.0"
+derive_more = "0.99.17"
