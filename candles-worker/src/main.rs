@@ -8,7 +8,7 @@ mod utils;
 use crate::{db::db::Database, utils::markets::load_markets};
 use {
     clap::{Arg, Command},
-    tokio::time::{sleep, Duration},
+    tokio::{time, time::Duration},
 };
 
 #[tokio::main]
@@ -40,14 +40,14 @@ async fn main() {
     .await
     .unwrap();
 
+    let mut interval = time::interval(Duration::from_secs(10));
     loop {
+        interval.tick().await;
         if let Err(e) = aob::fetch::fetch_bbo(&aob_markets, &database, &rpc).await {
             println!("Fetch bbo error {}", e)
         };
         if let Err(e) = pyth::fetch::fetch_indexes(&pyth_feeds, &database, &rpc).await {
             println!("Fetch pyth error {}", e)
         }
-
-        sleep(Duration::from_secs(10)).await;
     }
 }
