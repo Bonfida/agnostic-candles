@@ -10,7 +10,7 @@ COPY --from=planner /server/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
 RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
-COPY . .
+COPY src Cargo.toml ./
 RUN cargo build --release --bin candles-server
 
 # We do not need the Rust toolchain to run the binary!

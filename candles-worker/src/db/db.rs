@@ -14,8 +14,8 @@ pub struct Database {
 }
 
 impl Database {
-    pub const ENTRY_SIZE: u64 = 120; // Size in bytes of a single db entry
-                                     // pub const RELATIVE_CHUNK_SIZE: f64 = 0.10; // Size of a timescaledb chunk
+    pub const ENTRY_SIZE: u64 = 112; // Size in bytes of a single db entry
+    pub const RELATIVE_CHUNK_SIZE: f64 = 0.10; // Size of a timescaledb chunk
     pub async fn new(
         refresh_period_ms: u64,
         number_of_markets: u64,
@@ -126,6 +126,7 @@ async fn initialize(
     let system_memory_kb = sysinfo::System::new_all().total_memory();
     let chunk_size_ms =
         refresh_period_ms * system_memory_kb * 1024 / Database::ENTRY_SIZE / number_of_markets;
+    let chunk_size_ms = (chunk_size_ms as f64) * Database::RELATIVE_CHUNK_SIZE;
     let s = client
         .prepare_typed(
             "SELECT set_chunk_time_interval('candles', $1);",
