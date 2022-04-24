@@ -3,15 +3,29 @@ use crate::{
     db::db::Database,
     error::WorkerError,
     utils::{markets::AobMarket, math::to_f64},
+    AobContext,
 };
 use {
-    agnostic_orderbook::critbit::Slab, solana_client::nonblocking::rpc_client::RpcClient,
+    agnostic_orderbook::critbit::Slab,
+    solana_client::nonblocking::rpc_client::RpcClient,
     solana_program::pubkey::Pubkey,
+    std::sync::Arc,
+    tokio::{time, time::Duration},
 };
+
+pub async fn run_fetch_bbo(context: AobContext) {
+    let mut interval = time::interval(Duration::from_secs(1));
+    loop {
+        interval.tick().await;
+        if let Err(e) = fetch_bbo(&context.aob_markets, context.db.clone(), &context.rpc).await {
+            println!("Fetch bbo error {}", e)
+        }
+    }
+}
 
 pub async fn fetch_bbo(
     markets: &[AobMarket],
-    database: &Database,
+    database: Arc<Database>,
     rpc: &str,
 ) -> Result<(), WorkerError> {
     let connection = RpcClient::new(rpc.to_owned());
