@@ -8,8 +8,20 @@ mod utils;
 use crate::{db::db::Database, utils::markets::load_markets};
 use {
     clap::{Arg, Command},
-    tokio::{time, time::Duration},
+    std::sync::Arc,
 };
+
+pub struct AobContext {
+    pub db: Arc<Database>,
+    pub rpc: String,
+    pub aob_markets: Vec<utils::markets::AobMarket>,
+}
+
+pub struct PythContext {
+    pub db: Arc<Database>,
+    pub rpc: String,
+    pub pyth_feeds: Vec<utils::markets::PythFeed>,
+}
 
 #[tokio::main]
 
@@ -33,21 +45,36 @@ async fn main() {
 
     let (pyth_feeds, aob_markets) = load_markets(markets_path, &rpc).await;
 
-    let database = Database::new(
-        refresh_period,
-        (pyth_feeds.len() + aob_markets.len()) as u64,
-    )
-    .await
-    .unwrap();
+    let database = Arc::new(
+        Database::new(
+            refresh_period,
+            (pyth_feeds.len() + aob_markets.len()) as u64,
+        )
+        .await
+        .unwrap(),
+    );
 
-    let mut interval = time::interval(Duration::from_secs(10));
-    loop {
-        interval.tick().await;
-        if let Err(e) = aob::fetch::fetch_bbo(&aob_markets, &database, &rpc).await {
-            println!("Fetch bbo error {}", e)
-        };
-        if let Err(e) = pyth::fetch::fetch_indexes(&pyth_feeds, &database, &rpc).await {
-            println!("Fetch pyth error {}", e)
-        }
-    }
+    let pyth_context = PythContext {
+        db: database.clone(),
+        rpc: rpc.clone(),
+        pyth_feeds: pyth_feeds.clone(),
+    };
+
+    let aob_context = AobContext {
+        db: database.clone(),
+        rpc: rpc.clone(),
+        aob_markets: aob_markets.clone(),
+    };
+
+    let mut handles = vec![];
+
+    handles.push(tokio::spawn(async move {
+        pyth::fetch::run_fetch_indexes(pyth_context).await;
+    }));
+
+    handles.push(tokio::spawn(async move {
+        aob::fetch::run_fetch_bbo(aob_context).await;
+    }));
+
+    futures::future::join_all(handles).await;
 }
