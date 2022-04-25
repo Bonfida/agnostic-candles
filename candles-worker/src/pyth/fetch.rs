@@ -9,7 +9,6 @@ use {
     bonfida_utils::pyth::get_oracle_price_fp32,
     solana_client::nonblocking::rpc_client::RpcClient,
     solana_program::pubkey::Pubkey,
-    std::sync::Arc,
     tokio::{time, time::Duration},
 };
 
@@ -17,7 +16,7 @@ pub async fn run_fetch_indexes(context: PythContext) {
     let mut interval = time::interval(Duration::from_secs(10));
     loop {
         interval.tick().await;
-        if let Err(e) = fetch_indexes(&context.pyth_feeds, context.db.clone(), &context.rpc).await {
+        if let Err(e) = fetch_indexes(&context.pyth_feeds, &context.db, &context.rpc).await {
             println!("Fetch index error {}", e)
         }
     }
@@ -25,7 +24,7 @@ pub async fn run_fetch_indexes(context: PythContext) {
 
 pub async fn fetch_indexes(
     markets: &[PythFeed],
-    database: Arc<Database>,
+    database: &Database,
     rpc: &str,
 ) -> Result<(), WorkerError> {
     let connection = RpcClient::new(rpc.to_owned());

@@ -9,7 +9,6 @@ use {
     agnostic_orderbook::critbit::Slab,
     solana_client::nonblocking::rpc_client::RpcClient,
     solana_program::pubkey::Pubkey,
-    std::sync::Arc,
     tokio::{time, time::Duration},
 };
 
@@ -17,7 +16,7 @@ pub async fn run_fetch_bbo(context: AobContext) {
     let mut interval = time::interval(Duration::from_secs(1));
     loop {
         interval.tick().await;
-        if let Err(e) = fetch_bbo(&context.aob_markets, context.db.clone(), &context.rpc).await {
+        if let Err(e) = fetch_bbo(&context.aob_markets, &context.db, &context.rpc).await {
             println!("Fetch bbo error {}", e)
         }
     }
@@ -25,7 +24,7 @@ pub async fn run_fetch_bbo(context: AobContext) {
 
 pub async fn fetch_bbo(
     markets: &[AobMarket],
-    database: Arc<Database>,
+    database: &Database,
     rpc: &str,
 ) -> Result<(), WorkerError> {
     let connection = RpcClient::new(rpc.to_owned());
