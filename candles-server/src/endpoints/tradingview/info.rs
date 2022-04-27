@@ -1,8 +1,6 @@
-use crate::{
-    error::ServerError, structs::tradingview::SymbolInfo, utils::parse_query::parse_query,
-};
+use crate::{error::ServerError, structs::tradingview::SymbolInfo, Context};
 use {
-    actix_web::{get, HttpRequest, HttpResponse},
+    actix_web::{get, web, HttpResponse},
     serde::Deserialize,
 };
 
@@ -12,10 +10,11 @@ pub struct Params {
 }
 
 #[get("/symbols")]
-pub async fn get_symbols_info(req: HttpRequest) -> Result<HttpResponse, ServerError> {
-    let params = parse_query::<Params>(&req)?;
-
-    let symbol_info = SymbolInfo::new(params.symbol);
+pub async fn get_symbols_info(
+    info: web::Query<Params>,
+    context: web::Data<Context>,
+) -> Result<HttpResponse, ServerError> {
+    let symbol_info = SymbolInfo::new(&info.symbol, &context.markets)?;
 
     Ok(HttpResponse::Ok().json(symbol_info))
 }

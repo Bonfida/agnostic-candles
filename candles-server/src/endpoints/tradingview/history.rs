@@ -5,10 +5,10 @@ use crate::{
         context::Context,
         tradingview::{Bar, Resolution},
     },
-    utils::{db::make_query, markets::valid_market, parse_query::parse_query, time::to_timestampz},
+    utils::{db::make_query, markets::valid_market, time::to_timestampz},
 };
 use {
-    actix_web::{get, web, HttpRequest, HttpResponse},
+    actix_web::{get, web, HttpResponse},
     serde::Deserialize,
     tokio_pg_mapper::FromTokioPostgresRow,
 };
@@ -23,15 +23,13 @@ pub struct Params {
 
 #[get("/history")]
 pub async fn get_history(
-    req: HttpRequest,
+    info: web::Query<Params>,
     context: web::Data<Context>,
 ) -> Result<HttpResponse, ServerError> {
-    let params = parse_query::<Params>(&req)?;
+    let resolution =
+        Resolution::from_str(info.resolution.as_str()).map_err(|_| ServerError::WrongResolution)?;
 
-    let resolution = Resolution::from_str(params.resolution.as_str())
-        .map_err(|_| ServerError::WrongResolution)?;
-
-    if !valid_market(&params.symbol, &context.markets.clone()) {
+    if !valid_market(&info.symbol, &context.markets.clone()) {
         return Err(ServerError::WrongParameters);
     }
 
@@ -41,13 +39,13 @@ pub async fn get_history(
         .await
         .map_err(|_| ServerError::DbPoolError)?;
 
-    let from_ts = to_timestampz(params.from);
-    let to_ts = to_timestampz(params.to);
+    let from_ts = to_timestampz(info.from);
+    let to_ts = to_timestampz(info.to);
 
     let query = make_query(resolution);
 
     let candles = conn
-        .query(&query, &[&from_ts, &to_ts, &params.symbol])
+        .query(&query, &[&from_ts, &to_ts, &info.symbol])
         .await
         .map_err(|_| ServerError::DbQuerryError)?
         .iter()

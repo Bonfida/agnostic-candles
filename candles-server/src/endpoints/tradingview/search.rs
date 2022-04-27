@@ -1,10 +1,9 @@
 use crate::{
     error::ServerError,
     structs::{context::Context, tradingview::Symbol},
-    utils::parse_query::parse_query,
 };
 use {
-    actix_web::{get, web, HttpRequest, HttpResponse},
+    actix_web::{get, web, HttpResponse},
     serde::Deserialize,
 };
 
@@ -19,14 +18,12 @@ pub struct Params {
 #[get("/search")]
 pub async fn get_search(
     context: web::Data<Context>,
-    req: HttpRequest,
+    info: web::Query<Params>,
 ) -> Result<HttpResponse, ServerError> {
-    let params = parse_query::<Params>(&req)?;
-
-    if params.search_type.as_str() != "spot" {
+    if info.search_type.as_str() != "spot" {
         return Err(ServerError::WrongParameters);
     }
-    if params.exchange.as_str() != "Bonfida" {
+    if info.exchange.as_str() != "Bonfida" {
         return Err(ServerError::WrongParameters);
     }
 
@@ -37,9 +34,9 @@ pub async fn get_search(
         .into_iter()
         .filter(|x| {
             // TODO change for a better search
-            x.name.contains(params.query.as_str())
-                || params.query.contains(x.name.as_str())
-                || x.address.contains(params.query.as_str())
+            x.name.contains(info.query.as_str())
+                || info.query.contains(x.name.as_str())
+                || x.address.contains(info.query.as_str())
         })
         .map(|x| Symbol {
             // TODO maybe add decimals?

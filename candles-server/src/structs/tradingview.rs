@@ -1,4 +1,8 @@
-use crate::{structs::candles::Candle, utils::time::from_timestampz};
+use crate::{
+    error::ServerError,
+    structs::{candles::Candle, raw_market::RawMarket},
+    utils::time::from_timestampz,
+};
 use serde::{Serialize, Serializer};
 
 #[derive(Serialize)]
@@ -104,11 +108,16 @@ pub struct SymbolInfo {
 }
 
 impl SymbolInfo {
-    pub fn new(symbol: String) -> Self {
-        Self {
+    pub fn new(symbol: &str, raw_markets: &[RawMarket]) -> Result<Self, ServerError> {
+        let market = raw_markets
+            .iter()
+            .find(|x| x.name == symbol)
+            .ok_or(ServerError::RawMarketNotFound)?;
+
+        Ok(Self {
             name: symbol.to_string(),
             ticker: symbol.to_string(),
-            description: symbol,
+            description: symbol.to_string(),
             symbol_type: "Spot".to_owned(),
             session: "24x7".to_owned(),
             exchange: "Bonfida".to_owned(),
@@ -116,9 +125,9 @@ impl SymbolInfo {
             timezone: "Etc/UTC".to_owned(),
             has_intraday: true,
             supported_resolutions: RESOLUTIONS,
-            min_mov: 0.,     // TODO CHANGE
-            price_scale: 0., // TODO change
-        }
+            min_mov: market.min_mov,
+            price_scale: market.price_scale,
+        })
     }
 }
 

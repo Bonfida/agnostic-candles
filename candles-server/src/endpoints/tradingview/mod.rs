@@ -3,6 +3,7 @@ use actix_web::{web, Scope};
 pub mod config;
 pub mod history;
 pub mod info;
+pub mod pairs;
 pub mod search;
 pub mod time;
 
@@ -12,4 +13,5 @@ pub fn service() -> Scope {
         .service(config::get_tradingview_config)
         .service(info::get_symbols_info)
         .service(history::get_history)
+        .service(pairs::get_pairs)
 }
