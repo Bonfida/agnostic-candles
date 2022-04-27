@@ -23,6 +23,8 @@ pub struct PythContext {
     pub pyth_feeds: Vec<utils::markets::PythFeed>,
 }
 
+const MAX_ACCOUNT_CHUNK: usize = 100;
+
 #[tokio::main]
 
 async fn main() {
@@ -54,27 +56,28 @@ async fn main() {
         .unwrap(),
     );
 
-    let pyth_context = PythContext {
-        db: database.clone(),
-        rpc: rpc.clone(),
-        pyth_feeds: pyth_feeds.clone(),
-    };
-
-    let aob_context = AobContext {
-        db: database.clone(),
-        rpc: rpc.clone(),
-        aob_markets: aob_markets.clone(),
-    };
-
     let mut handles = vec![];
+    for pyth_feed in pyth_feeds.chunks(MAX_ACCOUNT_CHUNK).map(|x| x.to_owned()) {
+        let pyth_context = PythContext {
+            db: database.clone(),
+            rpc: rpc.clone(),
+            pyth_feeds: pyth_feed,
+        };
+        handles.push(tokio::spawn(async move {
+            pyth::fetch::run_fetch_indexes(pyth_context).await;
+        }));
+    }
 
-    handles.push(tokio::spawn(async move {
-        pyth::fetch::run_fetch_indexes(pyth_context).await;
-    }));
-
-    handles.push(tokio::spawn(async move {
-        aob::fetch::run_fetch_bbo(aob_context).await;
-    }));
+    for aob_market in aob_markets.chunks(MAX_ACCOUNT_CHUNK).map(|x| x.to_owned()) {
+        let aob_context = AobContext {
+            db: database.clone(),
+            rpc: rpc.clone(),
+            aob_markets: aob_market,
+        };
+        handles.push(tokio::spawn(async move {
+            aob::fetch::run_fetch_bbo(aob_context).await;
+        }));
+    }
 
     futures::future::join_all(handles).await;
 }
