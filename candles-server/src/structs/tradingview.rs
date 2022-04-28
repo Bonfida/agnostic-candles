@@ -108,12 +108,7 @@ pub struct SymbolInfo {
 }
 
 impl SymbolInfo {
-    pub fn new(symbol: &str, raw_markets: &[RawMarket]) -> Result<Self, ServerError> {
-        let market = raw_markets
-            .iter()
-            .find(|x| x.name == symbol)
-            .ok_or(ServerError::RawMarketNotFound)?;
-
+    pub fn new(symbol: &str, market: RawMarket) -> Result<Self, ServerError> {
         Ok(Self {
             name: symbol.to_string(),
             ticker: symbol.to_string(),

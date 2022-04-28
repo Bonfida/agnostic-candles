@@ -13,7 +13,7 @@ use {
 };
 
 pub async fn run_fetch_bbo(context: AobContext) {
-    let mut interval = time::interval(Duration::from_secs(1));
+    let mut interval = time::interval(Duration::from_millis(context.db.refresh_period_ms));
     loop {
         interval.tick().await;
         if let Err(e) = fetch_bbo(&context.aob_markets, &context.db, &context.rpc).await {

@@ -13,7 +13,7 @@ use {
 };
 
 pub async fn run_fetch_indexes(context: PythContext) {
-    let mut interval = time::interval(Duration::from_secs(10));
+    let mut interval = time::interval(Duration::from_millis(context.db.refresh_period_ms));
     loop {
         interval.tick().await;
         if let Err(e) = fetch_indexes(&context.pyth_feeds, &context.db, &context.rpc).await {

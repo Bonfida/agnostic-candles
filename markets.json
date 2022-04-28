@@ -5,7 +5,7 @@
     "isPyth": true,
     "baseDecimals": 6,
     "quoteDecimals": 6,
-    "min_mov": 1,
-    "price_scale": 100
+    "minMov": 1,
+    "priceScale": 100
   }
 ]

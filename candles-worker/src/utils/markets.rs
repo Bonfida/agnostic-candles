@@ -16,6 +16,8 @@ pub struct RawMarket {
     pub is_pyth: bool,
     pub base_decimals: u8,
     pub quote_decimals: u8,
+    pub min_mov: f64,
+    pub price_scale: f64,
 }
 
 #[derive(Clone)]

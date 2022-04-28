@@ -11,6 +11,7 @@ use crate::candles::candles::Candle;
 pub struct Database {
     client: tokio_postgres::Client,
     insertion_statement: Statement,
+    pub refresh_period_ms: u64,
 }
 
 impl Database {
@@ -40,6 +41,7 @@ impl Database {
         Ok(Self {
             client,
             insertion_statement,
+            refresh_period_ms,
         })
     }
 
@@ -74,9 +76,11 @@ async fn connect_to_database() -> (
     tokio_postgres::Client,
     tokio_postgres::Connection<Socket, <tokio_postgres::NoTls as MakeTlsConnect<Socket>>::Stream>,
 ) {
-    let password = std::env::var("POSTGRES_PASSWORD")
-        .expect("POSTGRES_PASSWORD environment variable must be set!");
-    let config_str = format!("host=db port=5432 password={password} user=postgres dbname=postgres");
+    // let password = std::env::var("POSTGRES_PASSWORD")
+    //     .expect("POSTGRES_PASSWORD environment variable must be set!");
+    let password = "postgres";
+    let config_str =
+        format!("host=0.0.0.0 port=5432 password={password} user=postgres dbname=postgres");
     loop {
         let res = tokio_postgres::connect(&config_str, NoTls).await;
         if let Ok(r) = res {

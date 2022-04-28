@@ -25,12 +25,14 @@
 4. [Server](#server)
 5. [Deployment](#deployment)
 
+Tradingview documentation can be found [here](https://github.com/tradingview/charting_library/wiki/UDF) this is a private repository, you must ask Tradingview to get access to it.
+
 <br />
 <a name="timescaledb"></a>
 <h2 align="center">Timescaledb</h2>
 <br />
 
-Explain like I'm five what is timescaledb
+This repository uses TimescaleDB to store candles. Full documentation can be found on their [website](https://www.timescale.com/)
 
 <br />
 <a name="configuration"></a>
@@ -39,11 +41,12 @@ Explain like I'm five what is timescaledb
 
 Markets should be passed in a JSON file as follow
 
-| address | name   | isPyth | baseDecimals | quoteDecimals | min_mov | price_scale |
-| ------- | ------ | ------ | ------------ | ------------- | ------- | ----------- |
-| string  | string | bool   | u8           | u8            | u8      | u16         |
+| address                         | name               | isPyth                     | baseDecimals                        | quoteDecimals                        | min_mov              | price_scale             |
+| ------------------------------- | ------------------ | -------------------------- | ----------------------------------- | ------------------------------------ | -------------------- | ----------------------- |
+| string                          | string             | bool                       | u8                                  | u8                                   | u8                   | u16                     |
+| Pyth feed or AOB market address | Name of the market | `true` if this a Pyth feed | Base token decimals (for Pyth only) | Quote token decimals (for Pyth only) | Min move (cf TV doc) | Price scale (cf TV doc) |
 
-`min_mov` and `price_scale` are parameters required by the Tradingview specification:
+`min_mov` and `price_scale` are parameters required by the Tradingview specification, see the exact definition on [Tradingview documentation](https://github.com/tradingview/charting_library/wiki/UDF)
 
 - `min_mov = 1` is equivalent to a tick size of 0.01
 - `price_scale = 100` is equivalent to 1.01
@@ -58,8 +61,8 @@ For instance
     "isPyth": true,
     "baseDecimals": 6,
     "quoteDecimals": 6,
-    "min_mov": 1,
-    "price_scale": 100
+    "minMov": 1,
+    "priceScale": 100
   }
 ]
 ```
@@ -79,15 +82,15 @@ cargo run markets_json_path rpc refresh_period
 
 - `markets_json_path` is the path to your JSON file that contains the markets you want to fetch
 - `rpc` The URL of your Solana RPC endpoint
-- `refresh_period` TODO
+- `refresh_period` interval at which candles are fetched (in ms)
 
 So for instance
 
 ```
-cargo run ./markets.json https://solana-api.projectserum.com 10
+cargo run ./markets.json https://solana-api.projectserum.com 10000
 ```
 
-The worker handles Pyth and AOB markets in separate threads. This program uses `getMultipleAccountInfo` RPC requests to optimize the number of RPC calls. However, certain RPC nodes have limits to how many accounts can be passed in 1 request (usually 100) this is why the array of accounts are split in chunks of 100 and spawned in different threads.
+The worker handles Pyth and AOB markets in separate threads. This program uses `getMultipleAccountInfo` RPC requests to optimize the number of RPC calls. However, certain RPC nodes have limits to how many accounts can be passed in 1 request (usually 100) this is why the array of accounts are split in chunks of `MAX_ACCOUNT_CHUNK` and spawned in different threads.
 
 For AOB markets, bids and asks account addresses are being fetched at the start of the program and are cached for more efficient polling.
 
@@ -110,38 +113,140 @@ For instance
 cargo run ./market.json my_user my_password 127.0.0.1 5432 my_db
 ```
 
-it has the following endpoints required by the Tradingview specification:
-
-- TODO put link to the TV specs
-- TODO mettre response exemple
+it has the following endpoints required by the Tradingview [specification](https://github.com/tradingview/charting_library/wiki/UDF)
 
 ### Config
 
+**Request:**
+
 `GET /tradingview/config`
+
 It exposes the tradingview configuration of your server
 If you want to change the available resolutions of your server you will have to modify this configuration
 
+**Response:**
+
+```json
+{
+  "supported_resolutions": [
+    "1",
+    "3",
+    "5",
+    "15",
+    "30",
+    "60",
+    "120",
+    "240",
+    "360",
+    "480",
+    "720",
+    "960",
+    "D"
+  ],
+  "supports_group_request": false,
+  "supports_marks": false,
+  "supports_search": true,
+  "supports_timescale_marks": false
+}
+```
+
 ### Symbols
+
+**Request:**
 
 `GET /tradingview/symbols?symbol={symbol}`
 
-TODO change the file name + check if symbol actually exists
 Serve information for a requested symbol
+
+**Response:**
+
+```json
+{
+  "name": "FIDA-USDC-PYTH",
+  "ticker": "FIDA-USDC-PYTH",
+  "description": "FIDA-USDC-PYTH",
+  "type": "Spot",
+  "session": "24x7",
+  "exchange": "Bonfida",
+  "listed_exchange": "Bonfida",
+  "timezone": "Etc/UTC",
+  "has_intraday": true,
+  "supported_resolutions": [
+    "1",
+    "3",
+    "5",
+    "15",
+    "30",
+    "60",
+    "120",
+    "240",
+    "360",
+    "480",
+    "720",
+    "960",
+    "D"
+  ],
+  "minmov": 1.0,
+  "pricescale": 100.0
+}
+```
 
 ### Search
 
 `GET /tradingview/search?query={query}&search_type={search_type}&exchange={exchange}&limit={limit}`
+
 Can be used to search existing market
+
+**Response:**
+
+```json
+[
+  {
+    "symbol": "FIDA-USDC-PYTH",
+    "full_name": "FIDA-USDC-PYTH",
+    "description": "Name:FIDA-USDC-PYTH - Address: ETp9eKXVv1dWwHSpsXRUuXHmw24PwRkttCGVgpZEY9zF",
+    "exchange": "Bonfida",
+    "ticker": "FIDA-USDC-PYTH",
+    "type": "Spot"
+  }
+]
+```
 
 ### Time
 
+**Request:**
+
 `GET /tradingview/time`
+
 Returns the current unix timestamp (in seconds!) of the server
+
+**Response:**
+
+```json
+1651188181
+```
 
 ### History
 
+**Request:**
+
 `GET /tradingview/history?symbol={symbol}&from={from}&to={to}&resolution={resolution}`
+
 Returns historical candles for a given symbol
+
+**Response:**
+
+```json
+{
+  "s": "ok",
+  "time": [1651189320, 1651189380],
+  "close": [1.2090027797967196, 1.2083083698526025],
+  "open": [1.2090027797967196, 1.208549999864772],
+  "high": [1.2090027797967196, 1.208549999864772],
+  "low": [1.2090027797967196, 1.208055029856041],
+  "volume": [0, 0]
+}
+```
 
 ### Pairs
 
