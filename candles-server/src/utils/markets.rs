@@ -7,6 +7,5 @@ pub fn load_markets(path: &str) -> Vec<RawMarket> {
 }
 
 pub fn valid_market(market_name: &str, markets: &[RawMarket]) -> bool {
-    let exists = markets.iter().find(|x| x.name == market_name);
-    exists.is_some()
+    markets.iter().any(|x| x.name == market_name)
 }

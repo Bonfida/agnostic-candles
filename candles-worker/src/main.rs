@@ -5,7 +5,7 @@ mod error;
 mod pyth;
 mod utils;
 
-use crate::{db::db::Database, utils::markets::load_markets};
+use crate::{db::Database, utils::markets::load_markets};
 use {
     clap::{Arg, Command},
     std::sync::Arc,

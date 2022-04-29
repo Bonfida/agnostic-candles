@@ -1,6 +1,6 @@
 use crate::{
-    candles::candles::Candle,
-    db::db::Database,
+    candles::Candle,
+    db::Database,
     error::WorkerError,
     utils::{markets::PythFeed, math::to_f64},
     PythContext,
