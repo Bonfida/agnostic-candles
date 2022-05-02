@@ -1,7 +1,7 @@
 <h1 align="center">Agnostic candles</h1>
 <br />
 <p align="center">
-<img width="250" src="https://ftx.com/static/media/fida.ce20eedf.svg"/>
+<img width="250" src="https://cloudflare-ipfs.com/ipfs/QmVLEU2NZpP9f1ge86GGECs2GVp2JX2F7NSnxgQRvHBagu"/>
 </p>
 <p align="center">
 <a href="https://twitter.com/bonfida">
